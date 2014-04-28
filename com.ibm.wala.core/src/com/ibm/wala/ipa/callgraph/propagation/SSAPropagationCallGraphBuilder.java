@@ -1096,7 +1096,20 @@ public abstract class SSAPropagationCallGraphBuilder extends PropagationCallGrap
               PointsToSetVariable pointsTo = system.findOrCreatePointsToSet(pKey);
 
               if (pointsTo.getValue() == null) {
-                  NewSiteReference newsite = NewSiteReference.make(instruction.getProgramCounter(), instruction.getDeclaredTarget().getDeclaringClass());
+                  IClassHierarchy cha = getClassHierarchy();
+                  IClass receiverClass = cha.lookupClass(instruction.getDeclaredTarget().getDeclaringClass());
+
+                  if (receiverClass.isAbstract() || receiverClass.isInterface()) {
+                      Collection<IClass> subclasses = receiverClass.isAbstract() ?
+                                                          cha.getImmediateSubclasses(receiverClass) :
+                                                          cha.getImplementors(receiverClass.getReference());
+
+                      if (!subclasses.isEmpty()) {
+                          receiverClass = subclasses.iterator().next();
+                      }
+                  }
+
+                  NewSiteReference newsite = NewSiteReference.make(instruction.getProgramCounter(), receiverClass.getReference());
                   InstanceKey iKey = getInstanceKeyForAllocation(newsite);
 
                   if (iKey != null) {
