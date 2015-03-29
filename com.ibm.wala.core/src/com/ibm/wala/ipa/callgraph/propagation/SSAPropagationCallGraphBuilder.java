@@ -161,7 +161,7 @@ public abstract class SSAPropagationCallGraphBuilder extends PropagationCallGrap
   // ***************** ANDROID MODIFICATIONS *******************
   public interface BuilderListener {
       //void onPut(CGNode node, FieldReference field);
-      void onPut(CGNode node, PointerKey[] pKeys);
+      void onPut(CGNode node, IField field, PointerKey[] pKeys);
       void onInvoke(CGNode node, SSAAbstractInvokeInstruction invokeInstr);
   }
 
@@ -963,6 +963,13 @@ public abstract class SSAPropagationCallGraphBuilder extends PropagationCallGrap
 
       // skip putfields of primitive type
       if (field.getFieldType().isPrimitiveType()) {
+        // ***************** ANDROID MODIFICATIONS *******************
+        IField f = getClassHierarchy().resolveField(field);
+        if (f != null) {
+            notifyPut(ref, f, isStatic);
+        }
+        // ***************** END OF ANDROID MODIFICATIONS *******************
+
         return;
       }
       IField f = getClassHierarchy().resolveField(field);
@@ -976,22 +983,28 @@ public abstract class SSAPropagationCallGraphBuilder extends PropagationCallGrap
       assert isStatic || !symbolTable.isStringConstant(ref) : "put to string constant shouldn't be allowed?";
       if (isStatic) {
         processPutStatic(rval, field, f);
-
-        // ***************** ANDROID MODIFICATIONS *******************
-        BuilderListener listener = getBuilderListener();
-        if (listener != null && f.getDeclaringClass().getClassLoader().getReference().equals(ClassLoaderReference.Application)) {
-            PointerKey[] fieldKeys = new PointerKey[1];
-            fieldKeys[0] = getPointerKeyForStaticField(f);
-            listener.onPut(node, fieldKeys);
-        }
-        // ***************** END OF ANDROID MODIFICATIONS *******************
-        
       } else {
         processPutField(rval, ref, f);
+      }
 
-        // ***************** ANDROID MODIFICATIONS *******************
+      // ***************** ANDROID MODIFICATIONS *******************
+      notifyPut(ref, f, isStatic);
+      // ***************** END OF ANDROID MODIFICATIONS *******************
+    }
+
+    // ***************** ANDROID MODIFICATIONS *******************
+    private void notifyPut(int ref, IField f, boolean isStatic) {
         BuilderListener listener = getBuilderListener();
-        if (listener != null && f.getDeclaringClass().getClassLoader().getReference().equals(ClassLoaderReference.Application)) {
+        if (listener == null || !f.getDeclaringClass().getClassLoader().getReference().equals(ClassLoaderReference.Application)) {
+            return;
+        }
+
+        if (isStatic) {
+            PointerKey[] fieldKeys = new PointerKey[1];
+            fieldKeys[0] = getPointerKeyForStaticField(f);
+            listener.onPut(node, f, fieldKeys);
+        
+        } else {
             PointerKey refKey = getPointerKeyForLocal(ref);
             if (contentsAreInvariant(symbolTable, du, ref)) {
                 InstanceKey[] refIKeys = getInvariantContents(ref);
@@ -1001,7 +1014,7 @@ public abstract class SSAPropagationCallGraphBuilder extends PropagationCallGrap
                     PointerKey fieldKey = getPointerKeyForInstanceField(refIKey, f);
                     fieldKeys[keyIndex] = fieldKey;
                 }
-                listener.onPut(node, fieldKeys);
+                listener.onPut(node, f, fieldKeys);
             } else {
                 IntSet refPointsToSet = system.findOrCreatePointsToSet(refKey).getValue();
                 if (refPointsToSet != null) {
@@ -1015,13 +1028,14 @@ public abstract class SSAPropagationCallGraphBuilder extends PropagationCallGrap
                         fieldKeys[keyIndex] = fieldKey;
                         keyIndex++;
                     }
-                    listener.onPut(node, fieldKeys);
+                    listener.onPut(node, f, fieldKeys);
+                } else {
+                    listener.onPut(node, f, null);
                 }
             }
         }
-        // ***************** END OF ANDROID MODIFICATIONS *******************
-      }
     }
+    // ***************** END OF ANDROID MODIFICATIONS *******************
 
     private void processPutField(int rval, int ref, IField f) {
       assert !f.getFieldTypeReference().isPrimitiveType();
