@@ -966,7 +966,7 @@ public abstract class SSAPropagationCallGraphBuilder extends PropagationCallGrap
         // ***************** ANDROID MODIFICATIONS *******************
         IField f = getClassHierarchy().resolveField(field);
         if (f != null) {
-            notifyPut(ref, f, isStatic);
+            notifyPut(rval, ref, f, isStatic);
         }
         // ***************** END OF ANDROID MODIFICATIONS *******************
 
@@ -988,12 +988,12 @@ public abstract class SSAPropagationCallGraphBuilder extends PropagationCallGrap
       }
 
       // ***************** ANDROID MODIFICATIONS *******************
-      notifyPut(ref, f, isStatic);
+      notifyPut(rval, ref, f, isStatic);
       // ***************** END OF ANDROID MODIFICATIONS *******************
     }
 
     // ***************** ANDROID MODIFICATIONS *******************
-    private void notifyPut(int ref, IField f, boolean isStatic) {
+    private void notifyPut(int rval, int ref, IField f, boolean isStatic) {
         BuilderListener listener = getBuilderListener();
         if (listener == null || !f.getDeclaringClass().getClassLoader().getReference().equals(ClassLoaderReference.Application)) {
             return;
@@ -1006,6 +1006,7 @@ public abstract class SSAPropagationCallGraphBuilder extends PropagationCallGrap
         
         } else {
             PointerKey refKey = getPointerKeyForLocal(ref);
+            //if (contentsAreInvariant(symbolTable, du, ref) || contentsAreInvariant(symbolTable, du, rval)) {
             if (contentsAreInvariant(symbolTable, du, ref)) {
                 InstanceKey[] refIKeys = getInvariantContents(ref);
                 PointerKey[] fieldKeys = new PointerKey[refIKeys.length];
@@ -1015,7 +1016,7 @@ public abstract class SSAPropagationCallGraphBuilder extends PropagationCallGrap
                     fieldKeys[keyIndex] = fieldKey;
                 }
                 listener.onPut(node, f, fieldKeys);
-            } else {
+            } else if (!system.isImplicit(refKey)) {
                 IntSet refPointsToSet = system.findOrCreatePointsToSet(refKey).getValue();
                 if (refPointsToSet != null) {
                     IntIterator pointsToIter = refPointsToSet.intIterator();
@@ -1032,7 +1033,7 @@ public abstract class SSAPropagationCallGraphBuilder extends PropagationCallGrap
                 } else {
                     listener.onPut(node, f, null);
                 }
-            }
+           }
         }
     }
     // ***************** END OF ANDROID MODIFICATIONS *******************
