@@ -1206,7 +1206,7 @@ public abstract class SSAPropagationCallGraphBuilder extends PropagationCallGrap
                       IClass receiverClass = cha.lookupClass(instruction.getDeclaredTarget().getDeclaringClass());
 
                       // Do not propagate java lib methods
-                      if (!receiverClass.getClassLoader().getReference().equals(ClassLoaderReference.Primordial)) {
+                      if (receiverClass != null && !receiverClass.getClassLoader().getReference().equals(ClassLoaderReference.Primordial)) {
                           //if (receiverClass.isAbstract() || receiverClass.isInterface()) {
                           //    Collection<IClass> subclasses = receiverClass.isAbstract() ?
                           //                                        cha.getImmediateSubclasses(receiverClass) :
