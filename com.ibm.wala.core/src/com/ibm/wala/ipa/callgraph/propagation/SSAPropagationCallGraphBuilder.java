@@ -1191,56 +1191,6 @@ public abstract class SSAPropagationCallGraphBuilder extends PropagationCallGrap
             }
           });
 
-          /********************* ANDROID MODIFICATIONS *********************/
-
-          // Add instance key for receiver pointer key if none exists
-          if (!instruction.isStatic()) {
-              PointerKey pKey = pks.get(0);
-              PointsToSetVariable pointsTo = system.findOrCreatePointsToSet(pKey);
-
-              if (pointsTo.getValue() == null) {
-                  // Only do this for parameter values (for callbacks) --> doesn't work for inner classes
-                  // since the outer class is a parameter for the constructor, not the callbackm method itself
-                  //if (ir.getSymbolTable().isParameter(instruction.getUse(0))) {
-                      IClassHierarchy cha = getClassHierarchy();
-                      IClass receiverClass = cha.lookupClass(instruction.getDeclaredTarget().getDeclaringClass());
-
-                      // Do not propagate java lib methods
-                      if (receiverClass != null && !receiverClass.getClassLoader().getReference().equals(ClassLoaderReference.Primordial)) {
-                          //if (receiverClass.isAbstract() || receiverClass.isInterface()) {
-                          //    Collection<IClass> subclasses = receiverClass.isAbstract() ?
-                          //                                        cha.getImmediateSubclasses(receiverClass) :
-                          //                                        cha.getImplementors(receiverClass.getReference());
-
-                          //    if (!subclasses.isEmpty()) {
-                          //        Iterator<IClass> subclassesIter = subclasses.iterator();
-
-                          //        do {
-                          //            receiverClass = subclasses.iterator().next();
-                          //        } while ((receiverClass.isAbstract() || receiverClass.isInterface()) && subclassesIter.hasNext());
-                          //    }
-                          //}
-
-                          if (!receiverClass.isAbstract() && !receiverClass.isInterface()) {
-                              NewSiteReference newsite = NewSiteReference.make(instruction.getProgramCounter(), receiverClass.getReference());
-                              InstanceKey iKey = getInstanceKeyForAllocation(newsite);
-
-                              if (iKey != null) {
-                                  if (DEBUG) {
-                                      System.err.println("Adding instance key for type: " + iKey.getConcreteType());
-                                  }
-
-                                  system.findOrCreateIndexForInstanceKey(iKey);
-                                  system.newConstraint(pKey, iKey);
-                              }
-                          }
-                      }
-                  //}
-              }
-          }
-
-          /******************* END ANDROID MODIFICATIONS *******************/
-   
           DispatchOperator dispatchOperator = getBuilder().new DispatchOperator(instruction, node,
               invariantParameters, uniqueCatch, params);
           system.newSideEffect(dispatchOperator, pks.toArray(new PointerKey[pks.size()]));
