@@ -1192,40 +1192,35 @@ public abstract class SSAPropagationCallGraphBuilder extends PropagationCallGrap
           });
 
           /********************* ANDROID MODIFICATIONS *********************/
-
           // Add instance key for receiver pointer key if none exists
           if (!instruction.isStatic()) {
               PointerKey pKey = pks.get(0);
               PointsToSetVariable pointsTo = system.findOrCreatePointsToSet(pKey);
-
               if (pointsTo.getValue() == null) {
                   IClassHierarchy cha = getClassHierarchy();
                   IClass receiverClass = cha.lookupClass(instruction.getDeclaredTarget().getDeclaringClass());
-
-                  if (receiverClass.isAbstract() || receiverClass.isInterface()) {
-                      Collection<IClass> subclasses = receiverClass.isAbstract() ?
-                                                          cha.getImmediateSubclasses(receiverClass) :
-                                                          cha.getImplementors(receiverClass.getReference());
-
-                      if (!subclasses.isEmpty()) {
-                          receiverClass = subclasses.iterator().next();
+                  if (receiverClass != null) {
+                      if (receiverClass.isAbstract() || receiverClass.isInterface()) {
+                          Collection<IClass> subclasses = receiverClass.isAbstract() ?
+                                                              cha.getImmediateSubclasses(receiverClass) :
+                                                              cha.getImplementors(receiverClass.getReference());
+                          if (!subclasses.isEmpty()) {
+                              receiverClass = subclasses.iterator().next();
+                          }
                       }
                   }
-
-                  NewSiteReference newsite = NewSiteReference.make(instruction.getProgramCounter(), receiverClass.getReference());
+                  NewSiteReference newsite = NewSiteReference.make(instruction.getProgramCounter(), 
+                                                 receiverClass == null ? instruction.getDeclaredTarget().getDeclaringClass() : receiverClass.getReference());
                   InstanceKey iKey = getInstanceKeyForAllocation(newsite);
-
                   if (iKey != null) {
                       if (DEBUG) {
                           System.err.println("Adding instance key for type" + iKey.getConcreteType());
                       }
-
                       system.findOrCreateIndexForInstanceKey(iKey);
                       system.newConstraint(pKey, iKey);
                   }
               }
           }
-
           /******************* END ANDROID MODIFICATIONS *******************/
 
           DispatchOperator dispatchOperator = getBuilder().new DispatchOperator(instruction, node,
