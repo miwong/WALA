@@ -166,6 +166,25 @@ public abstract class PropagationCallGraphBuilder implements CallGraphBuilder {
    */
   final private boolean rememberGetPutHistory = true;
 
+  // ***************** ANDROID MODIFICATIONS *******************
+  public interface BuilderListener {
+      //void onPut(CGNode node, FieldReference field);
+      void onPut(CGNode node, IField field, PointerKey[] pKeys);
+      void onInvoke(CGNode node, SSAAbstractInvokeInstruction invokeInstr);
+      void onInvokeTarget(CGNode node, CallSiteReference site, IMethod targetMethod);
+  }
+
+  private BuilderListener builderListener = null;
+
+  public void setBuilderListener(BuilderListener listener) {
+      builderListener = listener;
+  }
+
+  public BuilderListener getBuilderListener() {
+      return builderListener;
+  }
+  // ***************** END OF ANDROID MODIFICATIONS *******************
+
   /**
    * @param cha governing class hierarchy
    * @param options governing call graph construction options
@@ -238,6 +257,10 @@ public abstract class PropagationCallGraphBuilder implements CallGraphBuilder {
 
     discoveredNodes = HashSetFactory.make();
     discoveredNodes.add(callGraph.getFakeRootNode());
+
+    // ***************** ANDROID MODIFICATIONS *******************
+    //alreadyVisited.clear();
+    // ************* END OF ANDROID MODIFICATIONS ****************
 
     // Set up the initially reachable methods and classes
     for (Iterator it = options.getEntrypoints().iterator(); it.hasNext();) {
@@ -705,6 +728,11 @@ public abstract class PropagationCallGraphBuilder implements CallGraphBuilder {
     if (targetMethod == null || targetMethod.isAbstract()) {
       return null;
     }
+
+    // ***************** ANDROID MODIFICATIONS *******************
+    getBuilderListener().onInvokeTarget(caller, site, targetMethod);
+    // ***************** END OF ANDROID MODIFICATIONS *******************
+
     Context targetContext = contextSelector.getCalleeTarget(caller, site, targetMethod, iKey);
     
     if (targetContext instanceof IllegalArgumentExceptionContext) {

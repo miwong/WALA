@@ -163,21 +163,21 @@ public abstract class SSAPropagationCallGraphBuilder extends PropagationCallGrap
   public IProgressMonitor monitor;
 
   // ***************** ANDROID MODIFICATIONS *******************
-  public interface BuilderListener {
-      //void onPut(CGNode node, FieldReference field);
-      void onPut(CGNode node, IField field, PointerKey[] pKeys);
-      void onInvoke(CGNode node, SSAAbstractInvokeInstruction invokeInstr);
-  }
+  //public interface BuilderListener {
+  //    //void onPut(CGNode node, FieldReference field);
+  //    void onPut(CGNode node, IField field, PointerKey[] pKeys);
+  //    void onInvoke(CGNode node, SSAAbstractInvokeInstruction invokeInstr);
+  //}
 
-  private BuilderListener builderListener = null;
-  
-  public void setBuilderListener(BuilderListener listener) {
-      builderListener = listener;
-  }
+  //private BuilderListener builderListener = null;
+  //
+  //public void setBuilderListener(BuilderListener listener) {
+  //    builderListener = listener;
+  //}
 
-  public BuilderListener getBuilderListener() {
-      return builderListener;
-  }
+  //public BuilderListener getBuilderListener() {
+  //    return builderListener;
+  //}
   // ***************** END OF ANDROID MODIFICATIONS *******************
 
   protected SSAPropagationCallGraphBuilder(IClassHierarchy cha, AnalysisOptions options, AnalysisCache cache,
