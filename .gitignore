@@ -2,11 +2,9 @@ target/
 */bin/
 com.ibm.wala.cast.js.rhino/lib/
 com.ibm.wala.cast.js/lib/
-com.ibm.wala.cast.java.polyglot/lib/
 com.ibm.wala.cast.java.test.data/src/JLex/
 .metadata/
 *~
-com.ibm.wala.cast.js.test.data/examples-src/ajaxslt/
 com.ibm.wala.core.testdata/@dot/
 com.ibm.wala.core.testdata/*.jar
 com.ibm.wala.core/dat/wala.properties
